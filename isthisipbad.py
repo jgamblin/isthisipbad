@@ -106,10 +106,16 @@ URLS = [
      'is listed on OpenBlock',
      True),
 
-    #NoThink
+    #NoThinkMalware
     ('http://www.nothink.org/blacklist/blacklist_malware_http.txt',
-     'is not listed on NoThink',
-     'is listed on NoThink',
+     'is not listed on NoThink Malware',
+     'is listed on NoThink Malware',
+     True),
+     
+    #NoThinkSSH
+    ('http://www.nothink.org/blacklist/blacklist_ssh_all.txt',
+     'is not listed on NoThink SSH',
+     'is listed on NoThink SSH',
      True),
 
     #Feodo
