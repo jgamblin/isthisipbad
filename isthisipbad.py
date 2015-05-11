@@ -119,7 +119,7 @@ matches = re.findall(badip, html_content);
 if len(matches) == 0: 
    print (Green(badip + ' is not listed on BlocklistDE'))
 else:
-    print (Red(badip + ' is listed on BlocklistDE'))
+    print (red(badip + ' is listed on BlocklistDE'))
     BAD = BAD + 1
 
 #Dragon Research Group - SSH
@@ -130,7 +130,7 @@ matches = re.findall(badip, html_content);
 if len(matches) == 0: 
    print (Green(badip + ' is not listed on Dragon Research Group - SSH'))
 else:
-    print (Red(badip + ' is listed on Dragon Research Group - SSH'))
+    print (red(badip + ' is listed on Dragon Research Group - SSH'))
     BAD = BAD + 1
 
 #Dragon Research Group - VNC
@@ -141,7 +141,7 @@ matches = re.findall(badip, html_content);
 if len(matches) == 0: 
    print (Green(badip + ' is not listed on Dragon Research Group - VNC'))
 else:
-    print (Red(badip + ' is listed on Dragon Research Group - VNC'))
+    print (red(badip + ' is listed on Dragon Research Group - VNC'))
     BAD = BAD + 1
 
 #OpenBLock
