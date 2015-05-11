@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # Name:     isthisipbad.py
 # Purpose:  Checka IP against popular IP blacklist
@@ -17,209 +16,170 @@ import hashlib
 import argparse
 import re
 import socket
+from urllib2 import urlopen
+
 
 def color(text, color_code):
     if sys.platform == "win32" and os.getenv("TERM") != "xterm":
         return text
- 
+
     return '\x1b[%dm%s\x1b[0m' % (color_code, text)
- 
+
+
 def red(text):
     return color(text, 31)
- 
+
+
 def blink(text):
-    return color(text, 05)
-    
-def Green(text):
+    return color(text, 5)
+
+
+def green(text):
     return color(text, 32)
- 
+
+
 def yellow(text):
     return color(text, 34)
 
-from urllib2 import urlopen
-my_ip = urlopen('http://ip.42.pl/raw').read()
 
-print(yellow('Check IP addresses against popular IP blacklist'))
-print(yellow('A quick and dirty script by @jgamblin'))
-print('\n')
-print(red('Your public IP address is ' + my_ip))
-print('\n')
+def content_test(url, badip):
+    """ Test the content of url's response to see if it contains badip.
 
-#Get IP To SCAN
+        Args:
+            url -- the URL to request data from
+            badip -- the IP address in question
 
-Join = raw_input('Would you like to check ' + my_ip + '? (Y/N):') 
+        Returns:
+            Boolean
+    """
 
-if Join == "yes":
-	badip = my_ip
-	
+    try:
+        html_content = urllib2.urlopen(url).read()
 
-elif Join == "YES":
-	badip = my_ip
-	
+        matches = re.findall(badip, html_content)
 
-elif Join == "Y":
-	badip = my_ip
-	
-
-elif Join == "y":
-	badip = my_ip
-	
-	
-else:
-	badip = raw_input (yellow("What IP would you like to check?: "))
-	
-print ('\n')
-
-#IP INFO
-reversed_dns = socket.getfqdn(badip)
-print ('\n')
-print (yellow('The FQDN for ' + badip + ' is ' + reversed_dns))
-print ('\n')
+        return len(matches) == 0
+    except:
+        return False
 
 
-BAD = 0
+URLS = [
+    #TOR
+    ('http://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv',
+     'is not a TOR Exit Node',
+     'is a TOR Exit Node',
+     False),
 
-#TOR
-html_content = urllib2.urlopen('http://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv').read()
+    #EmergingThreats
+    ('http://rules.emergingthreats.net/blockrules/compromised-ips.txt',
+     'is not listed on EmergingThreats',
+     'is listed on EmergingThreats',
+     True),
 
-matches = re.findall(badip, html_content);
+    #AlienVault
+    ('http://reputation.alienvault.com/reputation.data',
+     'is not listed on AlienVault',
+     'is listed on AlienVault',
+     True),
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not a TOR Exit Node'))
-else:
-    print (red(badip + ' is a TOR Exit Node'))
+    #BlocklistDE
+    ('http://www.blocklist.de/lists/bruteforcelogin.txt',
+     'is not listed on BlocklistDE',
+     'is listed on BlocklistDE',
+     True),
 
-#EmergingThreats
-html_content = urllib2.urlopen('http://rules.emergingthreats.net/blockrules/compromised-ips.txt').read()
+    #Dragon Research Group - SSH
+    ('http://dragonresearchgroup.org/insight/sshpwauth.txt',
+     'is not listed on Dragon Research Group - SSH',
+     'is listed on Dragon Research Group - SSH',
+     True),
 
-matches = re.findall(badip, html_content);
+    #Dragon Research Group - VNC
+    ('http://dragonresearchgroup.org/insight/vncprobe.txt',
+     'is not listed on Dragon Research Group - VNC',
+     'is listed on Dragon Research Group - VNC',
+     True),
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on EmergingThreats'))
-else:
-    print (red(badip + ' is listed on EmergingThreats'))
-    BAD = BAD + 1
+    #OpenBLock
+    ('http://www.openbl.org/lists/date_all.txt',
+     'is not listed on OpenBlock',
+     'is listed on OpenBlock',
+     True),
 
-#AlienVault
-html_content = urllib2.urlopen('http://reputation.alienvault.com/reputation.data').read()
+    #NoThink
+    ('http://www.nothink.org/blacklist/blacklist_malware_http.txt',
+     'is not listed on NoThink',
+     'is listed on NoThink',
+     True),
 
-matches = re.findall(badip, html_content);
+    #Feodo
+    ('http://rules.emergingthreats.net/blockrules/compromised-ips.txt',
+     'is not listed on Feodo',
+     'is listed on Feodo',
+     True),
 
-if len(matches) == 0: 
-  print (Green(badip + ' is not listed on AlienVault'))
-else:
-    print (red(badip + ' is listed on AlienVault'))
-    BAD = BAD + 1
+    #antispam.imp.ch
+    ('http://antispam.imp.ch/spamlist',
+     'is not listed on antispam.imp.ch',
+     'is listed on antispam.imp.ch',
+     True),
 
-#BlocklistDE
-html_content = urllib2.urlopen('http://www.blocklist.de/lists/bruteforcelogin.txt').read()
+    #dshield
+    ('http://www.dshield.org/ipsascii.html',
+     'is not listed on dshield',
+     'is listed on dshield',
+     True),
 
-matches = re.findall(badip, html_content);
+    #malc0de
+    ('http://malc0de.com/bl/IP_Blacklist.txt',
+     'is not listed on malc0de',
+     'is listed on malc0de',
+     True),
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on BlocklistDE'))
-else:
-    print (red(badip + ' is listed on BlocklistDE'))
-    BAD = BAD + 1
+    #MalWareBytes
+    ('http://hosts-file.net/rss.asp',
+     'is not listed on MalWareBytes',
+     'is listed on MalWareBytes',
+     True)]
 
-#Dragon Research Group - SSH
-html_content = urllib2.urlopen('http://dragonresearchgroup.org/insight/sshpwauth.txt').read()
 
-matches = re.findall(badip, html_content);
+if __name__ == "__main__":
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on Dragon Research Group - SSH'))
-else:
-    print (red(badip + ' is listed on Dragon Research Group - SSH'))
-    BAD = BAD + 1
+    my_ip = urlopen('http://ip.42.pl/raw').read()
 
-#Dragon Research Group - VNC
-html_content = urllib2.urlopen('http://dragonresearchgroup.org/insight/vncprobe.txt').read()
+    print(yellow('Check IP addresses against popular IP blacklist'))
+    print(yellow('A quick and dirty script by @jgamblin'))
+    print('\n')
+    print(red('Your public IP address is {0}'.format(my_ip)))
+    print('\n')
 
-matches = re.findall(badip, html_content);
+    #Get IP To SCAN
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on Dragon Research Group - VNC'))
-else:
-    print (red(badip + ' is listed on Dragon Research Group - VNC'))
-    BAD = BAD + 1
+    resp = raw_input('Would you like to check {0}? (Y/N):'.format(my_ip))
 
-#OpenBLock
-html_content = urllib2.urlopen('http://www.openbl.org/lists/date_all.txt').read()
+    if resp.lower() in ["yes", "y"]:
+        badip = my_ip
+    else:
+        badip = raw_input(yellow("What IP would you like to check?: "))
 
-matches = re.findall(badip, html_content);
+    print('\n')
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on OpenBlock'))
-else:
-    print (red(badip + ' is listed on OpenBlock'))
-    BAD = BAD + 1
+    #IP INFO
+    reversed_dns = socket.getfqdn(badip)
+    print('\n')
+    print(yellow('The FQDN for {0} is {1}'.format(badip, reversed_dns)))
+    print('\n')
 
-#NoThink
-html_content = urllib2.urlopen('http://www.nothink.org/blacklist/blacklist_malware_http.txt').read()
+    BAD = 0
 
-matches = re.findall(badip, html_content);
+    for url, succ, fail, mal in URLS:
+        if content_test(url, badip):
+            print(green('{0} {1}'.format(badip, succ)))
+        else:
+            if mal:
+                BAD += 1
 
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on NoThink'))
-else:
-    print (red(badip + ' is listed on NoThink'))
-    BAD = BAD + 1
+            print(red('{0} {1}'.format(badip, fail)))
 
-#Feodo
-html_content = urllib2.urlopen('http://rules.emergingthreats.net/blockrules/compromised-ips.txt').read()
-
-matches = re.findall(badip, html_content);
-
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on Feodo'))
-else:
-    print (red(badip + ' is listed on Feodo'))
-    BAD = BAD + 1
-
-#antispam.imp.ch
-html_content = urllib2.urlopen('http://antispam.imp.ch/spamlist').read()
-
-matches = re.findall(badip, html_content);
-
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on antispam.imp.ch'))
-else:
-    print (red(badip + ' is listed on antispam.imp.ch'))
-    BAD = BAD + 1
-
-#dshield
-html_content = urllib2.urlopen('http://www.dshield.org/ipsascii.html').read()
-
-matches = re.findall(badip, html_content);
-
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on dshield'))
-else:
-    print (red(badip + ' is listed on dshield'))
-    BAD = BAD + 1
-
-#malc0de
-html_content = urllib2.urlopen('http://malc0de.com/bl/IP_Blacklist.txt').read()
-
-matches = re.findall(badip, html_content);
-
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on malc0de'))
-else:
-    print (red(badip + ' is listed on malc0de'))
-    BAD = BAD + 1
-
-#MalWareBytes
-html_content = urllib2.urlopen('http://hosts-file.net/rss.asp').read()
-
-matches = re.findall(badip, html_content);
-
-if len(matches) == 0: 
-   print (Green(badip + ' is not listed on MalWareBytes'))
-else:
-    print (red(badip + ' is listed on MalWareBytes'))
-    BAD = BAD + 1
-
-print('\n')
-print (red (badip + ' is on %0.f lists.')) % BAD
+    print('\n')
+    print(red('{0} is on {1} lists.'.format(badip, BAD)))
