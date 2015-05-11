@@ -87,7 +87,7 @@ matches = re.findall(badip, html_content);
 if len(matches) == 0: 
    print (Green(badip + ' is not a TOR Exit Node'))
 else:
-    print (Red(badip + ' is a TOR Exit Node'))
+    print (red(badip + ' is a TOR Exit Node'))
 
 #EmergingThreats
 html_content = urllib2.urlopen('http://rules.emergingthreats.net/blockrules/compromised-ips.txt').read()
@@ -97,7 +97,7 @@ matches = re.findall(badip, html_content);
 if len(matches) == 0: 
    print (Green(badip + ' is not listed on EmergingThreats'))
 else:
-    print (Red(badip + ' is listed on EmergingThreats'))
+    print (red(badip + ' is listed on EmergingThreats'))
     BAD = BAD + 1
 
 #AlienVault
