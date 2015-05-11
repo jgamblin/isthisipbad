@@ -148,7 +148,7 @@ if __name__ == "__main__":
     my_ip = urlopen('http://ip.42.pl/raw').read()
 
     print(yellow('Check IP addresses against popular IP blacklist'))
-    print(yellow('A quick and dirty script by @jgamblin'))
+    print(yellow('A quick and dirty script by @jgamblin and @lojikil'))
     print('\n')
     print(red('Your public IP address is {0}'.format(my_ip)))
     print('\n')
