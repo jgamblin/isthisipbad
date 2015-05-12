@@ -54,12 +54,15 @@ def content_test(url, badip):
     """
 
     try:
-        html_content = urllib2.urlopen(url).read()
+        request = urllib2.Request(url)
+        request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36')
+        html_content = urllib2.build_opener().open(request).read()
 
         matches = re.findall(badip, html_content)
 
         return len(matches) == 0
-    except:
+    except Exception, e:
+        print "Error! %s" % e
         return False
 
 
