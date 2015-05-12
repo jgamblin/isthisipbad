@@ -140,7 +140,7 @@ URLS = [
      True),
 
     #dshield
-    ('http://www.dshield.org/ipsascii.html',
+    ('http://www.dshield.org/ipsascii.html?limit=10000',
      'is not listed on dshield',
      'is listed on dshield',
      True),
