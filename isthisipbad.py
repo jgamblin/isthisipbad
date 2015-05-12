@@ -16,6 +16,7 @@ import hashlib
 import argparse
 import re
 import socket
+import dns.resolver
 from urllib2 import urlopen
 
 
@@ -43,7 +44,8 @@ def blue(text):
 
 
 def content_test(url, badip):
-    """ Test the content of url's response to see if it contains badip.
+    """ 
+    Test the content of url's response to see if it contains badip.
 
         Args:
             url -- the URL to request data from
@@ -65,6 +67,10 @@ def content_test(url, badip):
         print "Error! %s" % e
         return False
 
+bls = ["zen.spamhaus.org", "spam.abuse.ch", "cbl.abuseat.org", "virbl.dnsbl.bit.nl", "dnsbl.inps.de", 
+    "ix.dnsbl.manitu.net", "dnsbl.sorbs.net", "bl.spamcannibal.org", "bl.spamcop.net", 
+    "xbl.spamhaus.org", "pbl.spamhaus.org", "dnsbl-1.uceprotect.net", "dnsbl-2.uceprotect.net", 
+    "dnsbl-3.uceprotect.net", "db.wpbl.info"]
 
 URLS = [
     #TOR
@@ -185,15 +191,30 @@ if __name__ == "__main__":
 
 
     BAD = 0
+    GOOD = 0
 
     for url, succ, fail, mal in URLS:
         if content_test(url, badip):
             print(green('{0} {1}'.format(badip, succ)))
+            GOOD += 1
         else:
             if mal:
                 BAD += 1
 
             print(red('{0} {1}'.format(badip, fail)))
 
-    print('\n')
-    print(red('{0} is on {1} lists.'.format(badip, BAD)))
+   
+    for bl in bls:
+        try:
+            my_resolver = dns.resolver.Resolver()
+            query = '.'.join(reversed(str(badip).split("."))) + "." + bl
+            answers = my_resolver.query(query, "A")
+            print (red(badip + ' is listed on ' + bl))
+            BAD += 1
+        except dns.resolver.NXDOMAIN: 
+            print (green(badip + ' is not listed on ' + bl))
+            GOOD += 1
+            
+#This Doesnt work because I am stupid. 
+#print('\n')
+#print(red('{0} is on {1}/{2} lists.'.format(badip, BAD, GOOD)))
