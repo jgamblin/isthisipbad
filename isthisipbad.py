@@ -38,7 +38,7 @@ def green(text):
     return color(text, 32)
 
 
-def yellow(text):
+def blue(text):
     return color(text, 34)
 
 
@@ -156,8 +156,8 @@ if __name__ == "__main__":
 
     my_ip = urlopen('http://ip.42.pl/raw').read()
 
-    print(yellow('Check IP addresses against popular IP blacklist'))
-    print(yellow('A quick and dirty script by @jgamblin and @lojikil'))
+    print(blue('Check IP addresses against popular IP blacklist'))
+    print(blue('A quick and dirty script by @jgamblin and @lojikil'))
     print('\n')
     print(red('Your public IP address is {0}'.format(my_ip)))
     print('\n')
@@ -169,15 +169,20 @@ if __name__ == "__main__":
     if resp.lower() in ["yes", "y"]:
         badip = my_ip
     else:
-        badip = raw_input(yellow("What IP would you like to check?: "))
+        badip = raw_input(blue("What IP would you like to check?: "))
 
     print('\n')
 
     #IP INFO
     reversed_dns = socket.getfqdn(badip)
+    geoip = urllib.urlopen('http://api.hackertarget.com/geoip/?q=' + badip).read()
+
+    print(blue('The FQDN for {0} is {1}'.format(badip, reversed_dns)))
     print('\n')
-    print(yellow('The FQDN for {0} is {1}'.format(badip, reversed_dns)))
+    print(red('Some GEOIP Information:'))
+    print(blue(geoip))
     print('\n')
+
 
     BAD = 0
 
