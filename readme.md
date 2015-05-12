@@ -9,6 +9,6 @@ python isthisipbad.py
 
 
 #Important Notice
-*I dont kow what I am doing. This will likely break your system.* 
+*I dont know what I am doing. This will likely break your system.* 
 
 
