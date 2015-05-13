@@ -157,7 +157,7 @@ URLS = [
 
 if __name__ == "__main__":
 
-    my_ip = urlopen('http://ip.42.pl/raw').read()
+    my_ip = urlopen('http://icanhazip.com').read()
 
     print(blue('Check IP against popular IP and DNS blacklist'))
     print(blue('A quick and dirty script by @jgamblin'))
