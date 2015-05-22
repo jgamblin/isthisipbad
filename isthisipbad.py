@@ -215,7 +215,10 @@ if __name__ == "__main__":
             
         except dns.resolver.NXDOMAIN: 
             print (green(badip + ' is not listed on ' + bl))
-	    GOOD = GOOD + 1
+            GOOD = GOOD + 1
+
+        except dns.resolver.Timeout:
+            print 'Timeout querying ' + bl
             
            
 #This Doesnt work because I am stupid. 
