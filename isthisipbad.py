@@ -219,10 +219,10 @@ if __name__ == "__main__":
 
         except dns.resolver.Timeout:
             print 'Timeout querying ' + bl
-
         except dns.resolver.NoNameservers:
-            print 'Nameservers error when querying ' + bl
-
+            print 'No nameservers available for ' + bl
+        except dns.resolver.NoAnswer:
+            print 'No answer received for ' + bl
 
 #This Doesnt work because I am stupid.
 print('\n')
