@@ -44,7 +44,7 @@ def blue(text):
 
 
 def content_test(url, badip):
-    """ 
+    """
     Test the content of url's response to see if it contains badip.
 
         Args:
@@ -117,7 +117,7 @@ URLS = [
      'is not listed on NoThink Malware',
      'is listed on NoThink Malware',
      True),
-     
+
     #NoThinkSSH
     ('http://www.nothink.org/blacklist/blacklist_ssh_all.txt',
      'is not listed on NoThink SSH',
@@ -200,7 +200,7 @@ if __name__ == "__main__":
             print(red('{0} {1}'.format(badip, fail)))
 
     BAD = BAD
-    GOOD = GOOD   
+    GOOD = GOOD
 
     for bl in bls:
         try:
@@ -212,16 +212,16 @@ if __name__ == "__main__":
                 answer_txt = my_resolver.query(query, "TXT")
                 print 'URL: %s IS listed in %s (%s: %s)' %(url, bl, answers[0], answer_txt[0])
 		BAD = BAD + 1
-            
-        except dns.resolver.NXDOMAIN: 
+
+        except dns.resolver.NXDOMAIN:
             print (green(badip + ' is not listed on ' + bl))
             GOOD = GOOD + 1
 
         except dns.resolver.Timeout:
             print 'Timeout querying ' + bl
-            
-           
-#This Doesnt work because I am stupid. 
+
+
+#This Doesnt work because I am stupid.
 print('\n')
 print(red('{0} is on {1}/{2} lists.'.format(badip, BAD, (GOOD+BAD))))
 print('\n')
