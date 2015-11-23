@@ -6,16 +6,18 @@
 # Modified  11.05.15
 # Rev Level 0.5
 # -----------------------------------------------
+# Downloaded from GitHub page:
+# https://github.com/jgamblin/isthisipbad/blob/master/isthisipbad.py
+# Modified by MJC to fix errors.
 
 import os
 import sys
-import json
 import urllib
 import urllib2
-import hashlib
 import argparse
 import re
 import socket
+# Requires dnspython AKA python-dns package
 import dns.resolver
 from urllib2 import urlopen
 
@@ -44,20 +46,17 @@ def blue(text):
 
 
 def content_test(url, badip):
-    """ 
+    """
     Test the content of url's response to see if it contains badip.
-
         Args:
             url -- the URL to request data from
             badip -- the IP address in question
-
         Returns:
             Boolean
     """
 
     try:
         request = urllib2.Request(url)
-        request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36')
         html_content = urllib2.build_opener().open(request).read()
 
         matches = re.findall(badip, html_content)
@@ -67,7 +66,31 @@ def content_test(url, badip):
         print "Error! %s" % e
         return False
 
-bls = ["b.barracudacentral.org", "bl.deadbeef.com", "bl.emailbasura.org", "bl.spamcannibal.org", "bl.spamcop.net", "blackholes.five-ten-sg.com", "blacklist.woody.ch", "bogons.cymru.com", "cbl.abuseat.org", "cdl.anti-spam.org.cn", "combined.abuse.ch", "combined.rbl.msrbl.net", "db.wpbl.info", "dnsbl-1.uceprotect.net", "dnsbl-2.uceprotect.net", "dnsbl-3.uceprotect.net", "dnsbl.cyberlogic.net", "dnsbl.inps.de", "dnsbl.sorbs.net", "drone.abuse.ch", "drone.abuse.ch", "duinv.aupads.org", "dul.dnsbl.sorbs.net", "dul.ru,dyna.spamrats.com", "dynip.rothen.com", "http.dnsbl.sorbs.net", "images.rbl.msrbl.net", "ips.backscatterer.org", "ix.dnsbl.manitu.net", "korea.services.net", "misc.dnsbl.sorbs.net", "noptr.spamrats.com", "ohps.dnsbl.net.au", "omrs.dnsbl.net.au", "orvedb.aupads.org", "osps.dnsbl.net.au", "osrs.dnsbl.net.au", "owfs.dnsbl.net.au", "owps.dnsbl.net.au,pbl.spamhaus.org", "phishing.rbl.msrbl.net", "probes.dnsbl.net.au", "proxy.bl.gweep.ca", "proxy.block.transip.nl", "psbl.surriel.com", "rbl.interserver.net", "rdts.dnsbl.net.au", "relays.bl.gweep.ca", "relays.bl.kundenserver.de", "relays.nether.net", "residential.block.transip.nl", "ricn.dnsbl.net.au", "rmst.dnsbl.net.au", "sbl.spamhaus.org,short.rbl.jp,smtp.dnsbl.sorbs.net", "socks.dnsbl.sorbs.net", "spam.abuse.ch", "spam.dnsbl.sorbs.net,spam.rbl.msrbl.net", "spam.spamrats.com", "spamlist.or.kr", "spamrbl.imp.ch", "t3direct.dnsbl.net.au", "tor.dnsbl.sectoor.de", "torserver.tor.dnsbl.sectoor.de", "ubl.lashback.com", "ubl.unsubscore.com", "virbl.bit.nl", "virus.rbl.jp", "virus.rbl.msrbl.net", "web.dnsbl.sorbs.net", "wormrbl.imp.ch", "xbl.spamhaus.org", "zen.spamhaus.org", "zombie.dnsbl.sorbs.net"]
+bls = ["b.barracudacentral.org", "bl.spamcannibal.org", "bl.spamcop.net",
+       "blacklist.woody.ch", "cbl.abuseat.org", "cdl.anti-spam.org.cn",
+       "combined.abuse.ch", "combined.rbl.msrbl.net", "db.wpbl.info",
+       "dnsbl-1.uceprotect.net", "dnsbl-2.uceprotect.net",
+       "dnsbl-3.uceprotect.net", "dnsbl.cyberlogic.net",
+       "dnsbl.sorbs.net", "drone.abuse.ch", "drone.abuse.ch",
+       "duinv.aupads.org", "dul.dnsbl.sorbs.net", "dul.ru",
+       "dyna.spamrats.com", "dynip.rothen.com",
+       "http.dnsbl.sorbs.net", "images.rbl.msrbl.net",
+       "ips.backscatterer.org", "ix.dnsbl.manitu.net",
+       "korea.services.net", "misc.dnsbl.sorbs.net",
+       "noptr.spamrats.com", "ohps.dnsbl.net.au", "omrs.dnsbl.net.au",
+       "orvedb.aupads.org", "osps.dnsbl.net.au", "osrs.dnsbl.net.au",
+       "owfs.dnsbl.net.au", "pbl.spamhaus.org", "phishing.rbl.msrbl.net",
+       "probes.dnsbl.net.au", "proxy.bl.gweep.ca", "rbl.interserver.net",
+       "rdts.dnsbl.net.au", "relays.bl.gweep.ca", "relays.nether.net",
+       "residential.block.transip.nl", "ricn.dnsbl.net.au",
+       "rmst.dnsbl.net.au", "smtp.dnsbl.sorbs.net",
+       "socks.dnsbl.sorbs.net", "spam.abuse.ch", "spam.dnsbl.sorbs.net",
+       "spam.rbl.msrbl.net", "spam.spamrats.com", "spamrbl.imp.ch",
+       "t3direct.dnsbl.net.au", "tor.dnsbl.sectoor.de",
+       "torserver.tor.dnsbl.sectoor.de", "ubl.lashback.com",
+       "ubl.unsubscore.com", "virus.rbl.jp", "virus.rbl.msrbl.net",
+       "web.dnsbl.sorbs.net", "wormrbl.imp.ch", "xbl.spamhaus.org",
+       "zen.spamhaus.org", "zombie.dnsbl.sorbs.net"]
 
 URLS = [
     #TOR
@@ -83,10 +106,10 @@ URLS = [
      True),
 
     #AlienVault
-   ('http://reputation.alienvault.com/reputation.data',
-    'is not listed on AlienVault',
-    'is listed on AlienVault',
-    True),
+    ('http://reputation.alienvault.com/reputation.data',
+     'is not listed on AlienVault',
+     'is listed on AlienVault',
+     True),
 
     #BlocklistDE
     ('http://www.blocklist.de/lists/bruteforcelogin.txt',
@@ -117,7 +140,7 @@ URLS = [
      'is not listed on NoThink Malware',
      'is listed on NoThink Malware',
      True),
-     
+
     #NoThinkSSH
     ('http://www.nothink.org/blacklist/blacklist_ssh_all.txt',
      'is not listed on NoThink SSH',
@@ -154,38 +177,50 @@ URLS = [
      'is listed on MalWareBytes',
      True)]
 
+#    #Spamhaus DROP (in CIDR format, needs parsing)
+#    ('https://www.spamhaus.org/drop/drop.txt',
+#     'is not listed on Spamhaus DROP',
+#     'is listed on Spamhaus DROP',
+#     False),
+#    #Spamhaus EDROP (in CIDR format, needs parsing)
+#    ('https://www.spamhaus.org/drop/edrop.txt',
+#     'is not listed on Spamhaus EDROP',
+#     'is listed on Spamhaus EDROP',
+#     False)]
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Is This IP Bad?')
+    parser.add_argument('-i', '--ip', help='IP address to check')
+    args = parser.parse_args()
 
-    my_ip = urlopen('http://icanhazip.com').read()
-
-    print(blue('Check IP against popular IP and DNS blacklist'))
-    print(blue('A quick and dirty script by @jgamblin'))
-    print('\n')
-    print(red('Your public IP address is {0}'.format(my_ip)))
-    print('\n')
-
-    #Get IP To SCAN
-
-    resp = raw_input('Would you like to check {0}? (Y/N):'.format(my_ip))
-
-    if resp.lower() in ["yes", "y"]:
-        badip = my_ip
+    if args is not None and args.ip is not None and len(args.ip) > 0:
+        badip = args.ip
     else:
-        badip = raw_input(blue("What IP would you like to check?: "))
+        my_ip = urlopen('http://icanhazip.com').read().rstrip()
 
-    print('\n')
+        print(blue('Check IP against popular IP and DNS blacklists'))
+        print(blue('A quick and dirty script by @jgamblin\n'))
+        print(red('Your public IP address is {0}\n'.format(my_ip)))
+
+        # Get IP To Check
+        resp = raw_input('Would you like to check {0} ? (Y/N):'.format(my_ip))
+
+        if resp.lower() in ["yes", "y"]:
+            badip = my_ip
+        else:
+            badip = raw_input(blue("\nWhat IP would you like to check?: "))
+            if badip is None or badip == "":
+                sys.exit("No IP address to check.")
 
     #IP INFO
     reversed_dns = socket.getfqdn(badip)
-    geoip = urllib.urlopen('http://api.hackertarget.com/geoip/?q=' + badip).read()
+    geoip = urllib.urlopen('http://api.hackertarget.com/geoip/?q='
+                           + badip).read().rstrip()
 
-    print(blue('The FQDN for {0} is {1}'.format(badip, reversed_dns)))
-    print('\n')
-    print(red('Some GEOIP Information:'))
+    print(blue('\nThe FQDN for {0} is {1}\n'.format(badip, reversed_dns)))
+    print(red('Geolocation IP Information:'))
     print(blue(geoip))
     print('\n')
-
 
     BAD = 0
     GOOD = 0
@@ -195,33 +230,35 @@ if __name__ == "__main__":
             print(green('{0} {1}'.format(badip, succ)))
             GOOD = GOOD + 1
         else:
+            print(red('{0} {1}'.format(badip, fail)))
             BAD = BAD + 1
 
-            print(red('{0} {1}'.format(badip, fail)))
-
     BAD = BAD
-    GOOD = GOOD   
+    GOOD = GOOD
 
     for bl in bls:
         try:
                 my_resolver = dns.resolver.Resolver()
                 query = '.'.join(reversed(str(badip).split("."))) + "." + bl
-		my_resolver.timeout = 5
-		my_resolver.lifetime = 5
+                my_resolver.timeout = 5
+                my_resolver.lifetime = 5
                 answers = my_resolver.query(query, "A")
                 answer_txt = my_resolver.query(query, "TXT")
-                print 'URL: %s IS listed in %s (%s: %s)' %(url, bl, answers[0], answer_txt[0])
-		BAD = BAD + 1
-            
-        except dns.resolver.NXDOMAIN: 
-            print (green(badip + ' is not listed on ' + bl))
+                print (red(badip + ' is listed in ' + bl)
+                       + ' (%s: %s)' % (answers[0], answer_txt[0]))
+                BAD = BAD + 1
+
+        except dns.resolver.NXDOMAIN:
+            print (green(badip + ' is not listed in ' + bl))
             GOOD = GOOD + 1
 
         except dns.resolver.Timeout:
-            print 'Timeout querying ' + bl
-            
-           
-#This Doesnt work because I am stupid. 
-print('\n')
-print(red('{0} is on {1}/{2} lists.'.format(badip, BAD, (GOOD+BAD))))
-print('\n')
+            print (blink('WARNING: Timeout querying ' + bl))
+
+        except dns.resolver.NoNameservers:
+            print (blink('WARNING: No nameservers for ' + bl))
+
+        except dns.resolver.NoAnswer:
+            print (blink('WARNING: No answer for ' + bl))
+
+    print(red('\n{0} is on {1}/{2} blacklists.\n'.format(badip, BAD, (GOOD+BAD))))
