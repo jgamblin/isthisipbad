@@ -191,6 +191,7 @@ URLS = [
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Is This IP Bad?')
     parser.add_argument('-i', '--ip', help='IP address to check')
+    parser.add_argument('--success', help='Also display GOOD', required=False, action="store_true")
     args = parser.parse_args()
 
     if args is not None and args.ip is not None and len(args.ip) > 0:
@@ -227,7 +228,8 @@ if __name__ == "__main__":
 
     for url, succ, fail, mal in URLS:
         if content_test(url, badip):
-            print(green('{0} {1}'.format(badip, succ)))
+	    if args.success:
+                print(green('{0} {1}'.format(badip, succ)))
             GOOD = GOOD + 1
         else:
             print(red('{0} {1}'.format(badip, fail)))
