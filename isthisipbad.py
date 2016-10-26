@@ -57,9 +57,12 @@ def content_test(url, badip):
 
     try:
         request = urllib2.Request(url)
-        html_content = urllib2.build_opener().open(request).read()
+        opened_request = urllib2.build_opener().open(request)
+	html_content = opened_request.read()
+	retcode = opened_request.code
 
-        matches = re.findall(badip, html_content)
+	matches = retcode == 200
+        matches = matches and re.findall(badip, html_content)
 
         return len(matches) == 0
     except Exception, e:
