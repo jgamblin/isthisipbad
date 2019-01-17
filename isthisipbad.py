@@ -132,12 +132,6 @@ URLS = [
      'is listed on Dragon Research Group - VNC',
      True),
 
-    #OpenBLock
-    ('http://www.openbl.org/lists/date_all.txt',
-     'is not listed on OpenBlock',
-     'is listed on OpenBlock',
-     True),
-
     #NoThinkMalware
     ('http://www.nothink.org/blacklist/blacklist_malware_http.txt',
      'is not listed on NoThink Malware',
