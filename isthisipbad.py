@@ -5,9 +5,10 @@ import argparse
 import re
 import socket
 import dns
+import warnings
 from dns import resolver 
 from requests import get
-import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
@@ -35,15 +36,6 @@ def blue(text):
 
 
 def content_test(url, badip):
-    """
-    Test the content of url's response to see if it contains badip.
-        Args:
-            url -- the URL to request data from
-            badip -- the IP address in question
-        Returns:
-            Boolean
-    """
-
     try:
         request = urllib3.Request(url)
         opened_request = urllib3.build_opener().open(request)
