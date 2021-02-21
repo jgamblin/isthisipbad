@@ -1,25 +1,14 @@
-#!/usr/bin/env python
-# Name:     isthisipbad.py
-# Purpose:  Checka IP against popular IP blacklist
-# By:       Jerry Gamblin
-# Date:     11.05.15
-# Modified  11.05.15
-# Rev Level 0.5
-# -----------------------------------------------
-# Downloaded from GitHub page:
-# https://github.com/jgamblin/isthisipbad/blob/master/isthisipbad.py
-# Modified by MJC to fix errors.
-
 import os
 import sys
-import urllib
-import urllib2
+import urllib3
 import argparse
 import re
 import socket
-# Requires dnspython AKA python-dns package
-import dns.resolver
-from urllib2 import urlopen
+import dns
+from dns import resolver 
+from requests import get
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def color(text, color_code):
@@ -56,32 +45,30 @@ def content_test(url, badip):
     """
 
     try:
-        request = urllib2.Request(url)
-        opened_request = urllib2.build_opener().open(request)
-	html_content = opened_request.read()
-	retcode = opened_request.code
+        request = urllib3.Request(url)
+        opened_request = urllib3.build_opener().open(request)
+        html_content = opened_request.read()
+        retcode = opened_request.code
 
-	matches = retcode == 200
+        matches = retcode == 200
         matches = matches and re.findall(badip, html_content)
 
         return len(matches) == 0
-    except Exception, e:
-        print "Error! %s" % e
+    except:
         return False
 
-bls = ["b.barracudacentral.org", "bl.spamcannibal.org", "bl.spamcop.net",
-       "blacklist.woody.ch", "cbl.abuseat.org", "cdl.anti-spam.org.cn",
-       "combined.abuse.ch", "combined.rbl.msrbl.net", "db.wpbl.info",
-       "dnsbl-1.uceprotect.net", "dnsbl-2.uceprotect.net",
-       "dnsbl-3.uceprotect.net", "dnsbl.cyberlogic.net",
+bls = ["b.barracudacentral.org", "bl.spamcop.net",
+       "blacklist.woody.ch", "cbl.abuseat.org", 
+       "combined.abuse.ch", "combined.rbl.msrbl.net", 
+       "db.wpbl.info", "dnsbl.cyberlogic.net",
        "dnsbl.sorbs.net", "drone.abuse.ch", "drone.abuse.ch",
        "duinv.aupads.org", "dul.dnsbl.sorbs.net", "dul.ru",
-       "dyna.spamrats.com", "dynip.rothen.com",
+       "dynip.rothen.com",
        "http.dnsbl.sorbs.net", "images.rbl.msrbl.net",
        "ips.backscatterer.org", "ix.dnsbl.manitu.net",
        "korea.services.net", "misc.dnsbl.sorbs.net",
        "noptr.spamrats.com", "ohps.dnsbl.net.au", "omrs.dnsbl.net.au",
-       "orvedb.aupads.org", "osps.dnsbl.net.au", "osrs.dnsbl.net.au",
+       "osps.dnsbl.net.au", "osrs.dnsbl.net.au",
        "owfs.dnsbl.net.au", "pbl.spamhaus.org", "phishing.rbl.msrbl.net",
        "probes.dnsbl.net.au", "proxy.bl.gweep.ca", "rbl.interserver.net",
        "rdts.dnsbl.net.au", "relays.bl.gweep.ca", "relays.nether.net",
@@ -174,16 +161,6 @@ URLS = [
      'is listed on MalWareBytes',
      True)]
 
-#    #Spamhaus DROP (in CIDR format, needs parsing)
-#    ('https://www.spamhaus.org/drop/drop.txt',
-#     'is not listed on Spamhaus DROP',
-#     'is listed on Spamhaus DROP',
-#     False),
-#    #Spamhaus EDROP (in CIDR format, needs parsing)
-#    ('https://www.spamhaus.org/drop/edrop.txt',
-#     'is not listed on Spamhaus EDROP',
-#     'is listed on Spamhaus EDROP',
-#     False)]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Is This IP Bad?')
@@ -194,26 +171,25 @@ if __name__ == "__main__":
     if args is not None and args.ip is not None and len(args.ip) > 0:
         badip = args.ip
     else:
-        my_ip = urlopen('http://icanhazip.com').read().rstrip()
-
+        my_ip = get('https://api.ipify.org').text
         print(blue('Check IP against popular IP and DNS blacklists'))
         print(blue('A quick and dirty script by @jgamblin\n'))
         print(red('Your public IP address is {0}\n'.format(my_ip)))
 
         # Get IP To Check
-        resp = raw_input('Would you like to check {0} ? (Y/N):'.format(my_ip))
+        resp = input('Would you like to check {0} ? (Y/N):'.format(my_ip))
 
         if resp.lower() in ["yes", "y"]:
             badip = my_ip
         else:
-            badip = raw_input(blue("\nWhat IP would you like to check?: "))
+            badip = input(blue("\nWhat IP would you like to check?: "))
             if badip is None or badip == "":
                 sys.exit("No IP address to check.")
 
     #IP INFO
     reversed_dns = socket.getfqdn(badip)
-    geoip = urllib.urlopen('http://api.hackertarget.com/geoip/?q='
-                           + badip).read().rstrip()
+    geoip = get('http://api.hackertarget.com/geoip/?q='
+                           + badip).text
 
     print(blue('\nThe FQDN for {0} is {1}\n'.format(badip, reversed_dns)))
     print(red('Geolocation IP Information:'))
@@ -225,12 +201,12 @@ if __name__ == "__main__":
 
     for url, succ, fail, mal in URLS:
         if content_test(url, badip):
-	    if args.success:
-                print(green('{0} {1}'.format(badip, succ)))
-            GOOD = GOOD + 1
-        else:
-            print(red('{0} {1}'.format(badip, fail)))
-            BAD = BAD + 1
+            if args.success:
+                (green('{0} {1}'.format(badip, succ)))
+                GOOD = GOOD + 1
+            else:
+                (red('{0} {1}'.format(badip, fail)))
+                BAD = BAD + 1
 
     BAD = BAD
     GOOD = GOOD
@@ -243,21 +219,21 @@ if __name__ == "__main__":
                 my_resolver.lifetime = 5
                 answers = my_resolver.query(query, "A")
                 answer_txt = my_resolver.query(query, "TXT")
-                print (red(badip + ' is listed in ' + bl)
+                print(red(badip + ' is listed in ' + bl)
                        + ' (%s: %s)' % (answers[0], answer_txt[0]))
                 BAD = BAD + 1
 
         except dns.resolver.NXDOMAIN:
-            print (green(badip + ' is not listed in ' + bl))
+            print(green(badip + ' is not listed in ' + bl))
             GOOD = GOOD + 1
 
         except dns.resolver.Timeout:
-            print (blink('WARNING: Timeout querying ' + bl))
+            print(blink('WARNING: Timeout querying ' + bl))
 
         except dns.resolver.NoNameservers:
-            print (blink('WARNING: No nameservers for ' + bl))
+            print(blink('WARNING: No nameservers for ' + bl))
 
         except dns.resolver.NoAnswer:
-            print (blink('WARNING: No answer for ' + bl))
+             print(blink('WARNING: No answer for ' + bl))
 
     print(red('\n{0} is on {1}/{2} blacklists.\n'.format(badip, BAD, (GOOD+BAD))))
