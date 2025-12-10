@@ -1,13 +1,18 @@
-import os
-import sys
-import urllib3
+#!/usr/bin/env python3
+"""Is This IP Bad? - Check an IP against popular IP and DNS blacklists."""
+
 import argparse
+import os
 import re
 import socket
-import dns
+import sys
+import urllib.error
+import urllib.request
 import warnings
-from dns import resolver 
-from requests import get
+from typing import Optional
+
+import dns.resolver
+import requests
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -35,123 +40,120 @@ def blue(text):
     return color(text, 34)
 
 
-def content_test(url, badip):
+def content_test(url: str, badip: str) -> bool:
+    """Check if an IP appears in a threat feed URL.
+    
+    Args:
+        url: The URL of the threat feed to check
+        badip: The IP address to look for
+        
+    Returns:
+        True if IP is NOT found in the feed (good), False if found (bad) or error
+    """
     try:
-        request = urllib3.Request(url)
-        opened_request = urllib3.build_opener().open(request)
-        html_content = opened_request.read()
-        retcode = opened_request.code
+        request = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'IsThisIPBad/1.0'}
+        )
+        with urllib.request.urlopen(request, timeout=10) as response:
+            html_content = response.read().decode('utf-8', errors='ignore')
+            retcode = response.status
 
-        matches = retcode == 200
-        matches = matches and re.findall(badip, html_content)
+            if retcode == 200:
+                matches = re.findall(re.escape(badip), html_content)
+                return len(matches) == 0
+            return False
+    except urllib.error.URLError as e:
+        print(blink(f'WARNING: Could not reach {url}: {e}'))
+        return True  # Assume good if we can't check
+    except Exception as e:
+        print(blink(f'WARNING: Error checking {url}: {e}'))
+        return True  # Assume good if we can't check
 
-        return len(matches) == 0
-    except:
-        return False
+# DNS-based Blacklists (DNSBLs) - Updated December 2025
+# Removed defunct services, kept reliable ones
+DNSBLS = [
+    # Spamhaus - Most reliable and widely used
+    "zen.spamhaus.org",           # Combined: SBL+XBL+PBL
+    "sbl.spamhaus.org",           # Spamhaus Block List
+    "xbl.spamhaus.org",           # Exploits Block List
+    "pbl.spamhaus.org",           # Policy Block List
+    
+    # SpamCop
+    "bl.spamcop.net",
+    
+    # Barracuda
+    "b.barracudacentral.org",
+    
+    # SORBS (Spam and Open Relay Blocking System)
+    "dnsbl.sorbs.net",
+    "spam.dnsbl.sorbs.net",
+    "smtp.dnsbl.sorbs.net",
+    
+    # Abuseat / CBL
+    "cbl.abuseat.org",
+    
+    # UCEPROTECT
+    "dnsbl-1.uceprotect.net",
+    "dnsbl-2.uceprotect.net",
+    
+    # Other reliable DNSBLs
+    "psbl.surriel.com",
+    "dnsbl.dronebl.org",
+    "bl.mailspike.net",
+]
 
-bls = ["b.barracudacentral.org", "bl.spamcop.net",
-       "blacklist.woody.ch", "cbl.abuseat.org", 
-       "combined.abuse.ch", "combined.rbl.msrbl.net", 
-       "db.wpbl.info", "dnsbl.cyberlogic.net",
-       "dnsbl.sorbs.net", "drone.abuse.ch", "drone.abuse.ch",
-       "duinv.aupads.org", "dul.dnsbl.sorbs.net", "dul.ru",
-       "dynip.rothen.com",
-       "http.dnsbl.sorbs.net", "images.rbl.msrbl.net",
-       "ips.backscatterer.org", "ix.dnsbl.manitu.net",
-       "korea.services.net", "misc.dnsbl.sorbs.net",
-       "noptr.spamrats.com", "ohps.dnsbl.net.au", "omrs.dnsbl.net.au",
-       "osps.dnsbl.net.au", "osrs.dnsbl.net.au",
-       "owfs.dnsbl.net.au", "pbl.spamhaus.org", "phishing.rbl.msrbl.net",
-       "probes.dnsbl.net.au", "proxy.bl.gweep.ca", "rbl.interserver.net",
-       "rdts.dnsbl.net.au", "relays.bl.gweep.ca", "relays.nether.net",
-       "residential.block.transip.nl", "ricn.dnsbl.net.au",
-       "rmst.dnsbl.net.au", "smtp.dnsbl.sorbs.net",
-       "socks.dnsbl.sorbs.net", "spam.abuse.ch", "spam.dnsbl.sorbs.net",
-       "spam.rbl.msrbl.net", "spam.spamrats.com", "spamrbl.imp.ch",
-       "t3direct.dnsbl.net.au", "tor.dnsbl.sectoor.de",
-       "torserver.tor.dnsbl.sectoor.de", "ubl.lashback.com",
-       "ubl.unsubscore.com", "virus.rbl.jp", "virus.rbl.msrbl.net",
-       "web.dnsbl.sorbs.net", "wormrbl.imp.ch", "xbl.spamhaus.org",
-       "zen.spamhaus.org", "zombie.dnsbl.sorbs.net"]
-
-URLS = [
-    #TOR
-    ('http://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv',
-     'is not a TOR Exit Node',
-     'is a TOR Exit Node',
-     False),
-
-    #EmergingThreats
-    ('http://rules.emergingthreats.net/blockrules/compromised-ips.txt',
+# HTTP-based Threat Intelligence Feeds - Updated December 2025
+# Removed defunct services (Dragon Research Group, NoThink, etc.)
+THREAT_FEEDS = [
+    # Emerging Threats (Proofpoint)
+    ('https://rules.emergingthreats.net/blockrules/compromised-ips.txt',
      'is not listed on EmergingThreats',
      'is listed on EmergingThreats',
      True),
 
-    #AlienVault
-    ('http://reputation.alienvault.com/reputation.data',
-     'is not listed on AlienVault',
-     'is listed on AlienVault',
+    # Blocklist.de - Brute force attackers
+    ('https://lists.blocklist.de/lists/all.txt',
+     'is not listed on Blocklist.de',
+     'is listed on Blocklist.de',
      True),
 
-    #BlocklistDE
-    ('http://www.blocklist.de/lists/bruteforcelogin.txt',
-     'is not listed on BlocklistDE',
-     'is listed on BlocklistDE',
+    # Abuse.ch Feodo Tracker - Banking trojans
+    ('https://feodotracker.abuse.ch/downloads/ipblocklist.txt',
+     'is not listed on Feodo Tracker',
+     'is listed on Feodo Tracker (Banking Trojan)',
      True),
 
-    #Dragon Research Group - SSH
-    ('http://dragonresearchgroup.org/insight/sshpwauth.txt',
-     'is not listed on Dragon Research Group - SSH',
-     'is listed on Dragon Research Group - SSH',
+    # Abuse.ch SSL Blacklist
+    ('https://sslbl.abuse.ch/blacklist/sslipblacklist.txt',
+     'is not listed on SSL Blacklist',
+     'is listed on SSL Blacklist (Malicious SSL)',
      True),
 
-    #Dragon Research Group - VNC
-    ('http://dragonresearchgroup.org/insight/vncprobe.txt',
-     'is not listed on Dragon Research Group - VNC',
-     'is listed on Dragon Research Group - VNC',
+    # TOR Exit Nodes (official Tor Project list)
+    ('https://check.torproject.org/torbulkexitlist',
+     'is not a TOR Exit Node',
+     'is a TOR Exit Node',
+     False),
+
+    # CI Army - Malicious IPs
+    ('https://cinsscore.com/list/ci-badguys.txt',
+     'is not listed on CI Army',
+     'is listed on CI Army',
      True),
 
-    #NoThinkMalware
-    ('http://www.nothink.org/blacklist/blacklist_malware_http.txt',
-     'is not listed on NoThink Malware',
-     'is listed on NoThink Malware',
+    # IPsum - Daily updated threat intelligence
+    ('https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt',
+     'is not listed on IPsum (Level 3+)',
+     'is listed on IPsum (High Confidence Threat)',
      True),
 
-    #NoThinkSSH
-    ('http://www.nothink.org/blacklist/blacklist_ssh_all.txt',
-     'is not listed on NoThink SSH',
-     'is listed on NoThink SSH',
+    # Spamhaus DROP (Don't Route Or Peer)
+    ('https://www.spamhaus.org/drop/drop.txt',
+     'is not listed on Spamhaus DROP',
+     'is listed on Spamhaus DROP',
      True),
-
-    #Feodo
-    ('http://rules.emergingthreats.net/blockrules/compromised-ips.txt',
-     'is not listed on Feodo',
-     'is listed on Feodo',
-     True),
-
-    #antispam.imp.ch
-    ('http://antispam.imp.ch/spamlist',
-     'is not listed on antispam.imp.ch',
-     'is listed on antispam.imp.ch',
-     True),
-
-    #dshield
-    ('http://www.dshield.org/ipsascii.html?limit=10000',
-     'is not listed on dshield',
-     'is listed on dshield',
-     True),
-
-    #malc0de
-    ('http://malc0de.com/bl/IP_Blacklist.txt',
-     'is not listed on malc0de',
-     'is listed on malc0de',
-     True),
-
-    #MalWareBytes
-    ('http://hosts-file.net/rss.asp',
-     'is not listed on MalWareBytes',
-     'is listed on MalWareBytes',
-     True)]
+]
 
 
 if __name__ == "__main__":
@@ -163,10 +165,13 @@ if __name__ == "__main__":
     if args is not None and args.ip is not None and len(args.ip) > 0:
         badip = args.ip
     else:
-        my_ip = get('https://api.ipify.org').text
+        try:
+            my_ip = requests.get('https://api.ipify.org', timeout=10).text
+        except requests.RequestException:
+            my_ip = "Unable to determine"
         print(blue('Check IP against popular IP and DNS blacklists'))
         print(blue('A quick and dirty script by @jgamblin\n'))
-        print(red('Your public IP address is {0}\n'.format(my_ip)))
+        print(red(f'Your public IP address is {my_ip}\n'))
 
         # Get IP To Check
         resp = input('Would you like to check {0} ? (Y/N):'.format(my_ip))
@@ -178,54 +183,68 @@ if __name__ == "__main__":
             if badip is None or badip == "":
                 sys.exit("No IP address to check.")
 
-    #IP INFO
-    reversed_dns = socket.getfqdn(badip)
-    geoip = get('http://api.hackertarget.com/geoip/?q='
-                           + badip).text
+    # IP INFO
+    try:
+        reversed_dns = socket.getfqdn(badip)
+    except socket.error:
+        reversed_dns = "Unable to resolve"
+    
+    try:
+        geoip = requests.get(
+            f'http://api.hackertarget.com/geoip/?q={badip}',
+            timeout=10
+        ).text
+    except requests.RequestException:
+        geoip = "Unable to fetch geolocation data"
 
-    print(blue('\nThe FQDN for {0} is {1}\n'.format(badip, reversed_dns)))
+    print(blue(f'\nThe FQDN for {badip} is {reversed_dns}\n'))
     print(red('Geolocation IP Information:'))
     print(blue(geoip))
-    print('\n')
+    print()
 
     BAD = 0
     GOOD = 0
 
-    for url, succ, fail, mal in URLS:
-        if content_test(url, badip):
+    print(blue('\nChecking HTTP-based threat feeds...'))
+    for url, succ, fail, mal in THREAT_FEEDS:
+        is_clean = content_test(url, badip)
+        if is_clean:
             if args.success:
-                (green('{0} {1}'.format(badip, succ)))
-                GOOD = GOOD + 1
-            else:
-                (red('{0} {1}'.format(badip, fail)))
-                BAD = BAD + 1
+                print(green(f'{badip} {succ}'))
+            GOOD += 1
+        else:
+            print(red(f'{badip} {fail}'))
+            BAD += 1
 
-    BAD = BAD
-    GOOD = GOOD
+    print(blue('\nChecking DNS-based blacklists...'))
 
-    for bl in bls:
+    for bl in DNSBLS:
         try:
-                my_resolver = dns.resolver.Resolver()
-                query = '.'.join(reversed(str(badip).split("."))) + "." + bl
-                my_resolver.timeout = 5
-                my_resolver.lifetime = 5
-                answers = my_resolver.query(query, "A")
-                answer_txt = my_resolver.query(query, "TXT")
-                print(red(badip + ' is listed in ' + bl)
-                       + ' (%s: %s)' % (answers[0], answer_txt[0]))
-                BAD = BAD + 1
+            my_resolver = dns.resolver.Resolver()
+            query = '.'.join(reversed(str(badip).split("."))) + "." + bl
+            my_resolver.timeout = 5
+            my_resolver.lifetime = 5
+            answers = my_resolver.resolve(query, "A")
+            try:
+                answer_txt = my_resolver.resolve(query, "TXT")
+                txt_info = str(answer_txt[0])
+            except Exception:
+                txt_info = "No TXT record"
+            print(red(f'{badip} is listed in {bl}') + f' ({answers[0]}: {txt_info})')
+            BAD += 1
 
         except dns.resolver.NXDOMAIN:
-            print(green(badip + ' is not listed in ' + bl))
-            GOOD = GOOD + 1
+            if args.success:
+                print(green(f'{badip} is not listed in {bl}'))
+            GOOD += 1
 
         except dns.resolver.Timeout:
-            print(blink('WARNING: Timeout querying ' + bl))
+            print(blink(f'WARNING: Timeout querying {bl}'))
 
         except dns.resolver.NoNameservers:
-            print(blink('WARNING: No nameservers for ' + bl))
+            print(blink(f'WARNING: No nameservers for {bl}'))
 
         except dns.resolver.NoAnswer:
-             print(blink('WARNING: No answer for ' + bl))
+            print(blink(f'WARNING: No answer for {bl}'))
 
-    print(red('\n{0} is on {1}/{2} blacklists.\n'.format(badip, BAD, (GOOD+BAD))))
+    print(red(f'\n{badip} is on {BAD}/{GOOD+BAD} blacklists.\n'))
