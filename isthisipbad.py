@@ -9,7 +9,6 @@ import sys
 import urllib.error
 import urllib.request
 import warnings
-from typing import Optional
 
 import dns.resolver
 import requests
@@ -21,7 +20,7 @@ def color(text, color_code):
     if sys.platform == "win32" and os.getenv("TERM") != "xterm":
         return text
 
-    return '\x1b[%dm%s\x1b[0m' % (color_code, text)
+    return f'\x1b[{color_code}m{text}\x1b[0m'
 
 
 def red(text):
@@ -42,11 +41,11 @@ def blue(text):
 
 def content_test(url: str, badip: str) -> bool:
     """Check if an IP appears in a threat feed URL.
-    
+
     Args:
         url: The URL of the threat feed to check
         badip: The IP address to look for
-        
+
     Returns:
         True if IP is NOT found in the feed (good), False if found (bad) or error
     """
@@ -78,25 +77,25 @@ DNSBLS = [
     "sbl.spamhaus.org",           # Spamhaus Block List
     "xbl.spamhaus.org",           # Exploits Block List
     "pbl.spamhaus.org",           # Policy Block List
-    
+
     # SpamCop
     "bl.spamcop.net",
-    
+
     # Barracuda
     "b.barracudacentral.org",
-    
+
     # SORBS (Spam and Open Relay Blocking System)
     "dnsbl.sorbs.net",
     "spam.dnsbl.sorbs.net",
     "smtp.dnsbl.sorbs.net",
-    
+
     # Abuseat / CBL
     "cbl.abuseat.org",
-    
+
     # UCEPROTECT
     "dnsbl-1.uceprotect.net",
     "dnsbl-2.uceprotect.net",
-    
+
     # Other reliable DNSBLs
     "psbl.surriel.com",
     "dnsbl.dronebl.org",
@@ -174,7 +173,7 @@ if __name__ == "__main__":
         print(red(f'Your public IP address is {my_ip}\n'))
 
         # Get IP To Check
-        resp = input('Would you like to check {0} ? (Y/N):'.format(my_ip))
+        resp = input(f'Would you like to check {my_ip} ? (Y/N):')
 
         if resp.lower() in ["yes", "y"]:
             badip = my_ip
@@ -186,9 +185,9 @@ if __name__ == "__main__":
     # IP INFO
     try:
         reversed_dns = socket.getfqdn(badip)
-    except socket.error:
+    except OSError:
         reversed_dns = "Unable to resolve"
-    
+
     try:
         geoip = requests.get(
             f'http://api.hackertarget.com/geoip/?q={badip}',

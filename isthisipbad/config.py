@@ -7,25 +7,25 @@ DNSBLS = [
     ("sbl.spamhaus.org", "Spamhaus SBL"),
     ("xbl.spamhaus.org", "Spamhaus XBL"),
     ("pbl.spamhaus.org", "Spamhaus PBL"),
-    
+
     # SpamCop
     ("bl.spamcop.net", "SpamCop"),
-    
+
     # Barracuda
     ("b.barracudacentral.org", "Barracuda"),
-    
+
     # SORBS
     ("dnsbl.sorbs.net", "SORBS"),
     ("spam.dnsbl.sorbs.net", "SORBS Spam"),
     ("smtp.dnsbl.sorbs.net", "SORBS SMTP"),
-    
+
     # Abuseat / CBL
     ("cbl.abuseat.org", "Abuseat CBL"),
-    
+
     # UCEPROTECT
     ("dnsbl-1.uceprotect.net", "UCEPROTECT Level 1"),
     ("dnsbl-2.uceprotect.net", "UCEPROTECT Level 2"),
-    
+
     # Other reliable DNSBLs
     ("psbl.surriel.com", "PSBL"),
     ("dnsbl.dronebl.org", "DroneRL"),

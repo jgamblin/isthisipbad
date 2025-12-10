@@ -5,17 +5,15 @@ from __future__ import annotations
 import asyncio
 import csv
 import json
-import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
-from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from rich.table import Table
-from rich.panel import Panel
-from rich.text import Text
 from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+from rich.table import Table
+from rich.text import Text
 
 from .checker import IPChecker, IPReport, ThreatLevel
 
@@ -47,12 +45,12 @@ def format_report_table(report: IPReport, show_clean: bool = False) -> Table:
         show_header=True,
         header_style="bold cyan",
     )
-    
+
     table.add_column("Source", style="cyan")
     table.add_column("Type", style="dim")
     table.add_column("Status", justify="center")
     table.add_column("Details", style="dim")
-    
+
     for result in report.results:
         if result.error:
             status = Text("⚠ Error", style="yellow")
@@ -65,27 +63,27 @@ def format_report_table(report: IPReport, show_clean: bool = False) -> Table:
                 continue
             status = Text("✓ Clean", style="green")
             details = ""
-        
+
         table.add_row(
             result.source,
             result.source_type.replace("_", " ").title(),
             status,
             details[:60] + "..." if len(details or "") > 60 else details,
         )
-    
+
     return table
 
 
 def format_summary_panel(report: IPReport) -> Panel:
     """Format IP info and summary as a Rich panel."""
     threat_color = get_threat_color(report.threat_level)
-    
+
     lines = []
     lines.append(f"[bold]IP:[/bold] {report.ip}")
-    
+
     if report.fqdn:
         lines.append(f"[bold]FQDN:[/bold] {report.fqdn}")
-    
+
     if report.geo_info:
         geo = report.geo_info
         location_parts = [
@@ -100,14 +98,14 @@ def format_summary_panel(report: IPReport) -> Panel:
             lines.append(f"[bold]ISP:[/bold] {geo['isp']}")
         if geo.get("org"):
             lines.append(f"[bold]Organization:[/bold] {geo['org']}")
-    
+
     lines.append("")
     lines.append(f"[bold]Blacklists:[/bold] [{threat_color}]{report.blacklist_count}[/] / {report.total_checks}")
     lines.append(f"[bold]Threat Level:[/bold] [{threat_color}]{report.threat_level.value.upper()}[/]")
-    
+
     if report.error_count > 0:
         lines.append(f"[yellow]Errors: {report.error_count}[/]")
-    
+
     return Panel(
         "\n".join(lines),
         title="[bold]IP Information[/]",
@@ -132,7 +130,7 @@ def write_csv_output(reports: list[IPReport], output_path: Path) -> None:
             "blacklist_count", "total_checks", "threat_level",
             "source", "source_type", "listed", "details", "error"
         ])
-        
+
         for report in reports:
             geo = report.geo_info or {}
             for result in report.results:
@@ -151,7 +149,7 @@ def write_csv_output(reports: list[IPReport], output_path: Path) -> None:
                     result.details or "",
                     result.error or "",
                 ])
-    
+
     console.print(f"[green]Results written to {output_path}[/]")
 
 
@@ -169,7 +167,7 @@ async def check_single_ip(
     ) as progress:
         progress.add_task(f"Checking {ip}...", total=None)
         report = await checker.check_ip(ip)
-    
+
     return report
 
 
@@ -179,7 +177,7 @@ async def check_multiple_ips(
 ) -> list[IPReport]:
     """Check multiple IPs with progress display."""
     reports = []
-    
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -188,29 +186,29 @@ async def check_multiple_ips(
         console=console,
     ) as progress:
         task = progress.add_task("Checking IPs...", total=len(ips))
-        
+
         for ip in ips:
             progress.update(task, description=f"Checking {ip}...")
             report = await checker.check_ip(ip)
             reports.append(report)
             progress.advance(task)
-    
+
     return reports
 
 
 @app.command()
 def check(
-    ip: Optional[str] = typer.Argument(
+    ip: str | None = typer.Argument(
         None,
         help="IP address to check. If not provided, uses your public IP.",
     ),
-    file: Optional[Path] = typer.Option(
+    file: Path | None = typer.Option(
         None,
         "--file", "-f",
         help="File containing IP addresses (one per line).",
         exists=True,
     ),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "--output", "-o",
         help="Output file path (supports .json and .csv).",
@@ -248,13 +246,13 @@ def check(
 ):
     """
     Check IP addresses against blacklists and threat intelligence feeds.
-    
+
     Examples:
-    
+
         isthisipbad check 8.8.8.8
-        
+
         isthisipbad check --file ips.txt --output results.json
-        
+
         isthisipbad check 1.2.3.4 --show-clean
     """
     async def _run():
@@ -264,7 +262,7 @@ def check(
         ) as checker:
             # Collect IPs to check
             ips_to_check = []
-            
+
             if file:
                 # Read IPs from file
                 content = file.read_text()
@@ -272,7 +270,7 @@ def check(
                     line = line.strip()
                     if line and not line.startswith("#"):
                         ips_to_check.append(line)
-                
+
                 if not ips_to_check:
                     console.print("[red]No valid IPs found in file.[/]")
                     raise typer.Exit(1)
@@ -286,20 +284,20 @@ def check(
                         response = await client.get("https://api.ipify.org")
                         public_ip = response.text.strip()
                         console.print(f"[cyan]Your public IP: {public_ip}[/]")
-                        
+
                         if not typer.confirm("Check this IP?"):
                             public_ip = typer.prompt("Enter IP to check")
                         ips_to_check = [public_ip]
                 except Exception:
                     console.print("[red]Could not determine public IP.[/]")
                     raise typer.Exit(1)
-            
+
             # Perform checks
             if len(ips_to_check) == 1:
                 reports = [await check_single_ip(ips_to_check[0], checker, show_clean)]
             else:
                 reports = await check_multiple_ips(ips_to_check, checker)
-            
+
             # Output results
             if output:
                 suffix = output.suffix.lower()
@@ -309,7 +307,7 @@ def check(
                     write_csv_output(reports, output)
                 else:
                     write_json_output(reports, output)
-            
+
             if format == "json" and not output:
                 # Print JSON to stdout
                 data = [r.to_dict() for r in reports]
@@ -336,7 +334,7 @@ def check(
                         console.print(format_summary_panel(report))
                         console.print()
                         console.print(format_report_table(report, show_clean))
-                    
+
                     # Always show final summary
                     threat_color = get_threat_color(report.threat_level)
                     console.print()
@@ -346,14 +344,14 @@ def check(
                         f"{report.total_checks} blacklists "
                         f"([{threat_color}]{report.threat_level.value.upper()}[/])"
                     )
-            
+
             # Return exit code based on threat level
             max_threat = max((r.threat_level for r in reports), key=lambda x: list(ThreatLevel).index(x))
             if max_threat in (ThreatLevel.HIGH, ThreatLevel.CRITICAL):
                 raise typer.Exit(2)
             elif max_threat in (ThreatLevel.LOW, ThreatLevel.MEDIUM):
                 raise typer.Exit(1)
-    
+
     asyncio.run(_run())
 
 
@@ -368,18 +366,18 @@ def version():
 def sources():
     """List all threat intelligence sources."""
     from .config import DNSBLS, THREAT_FEEDS
-    
+
     table = Table(title="Threat Intelligence Sources", box=box.ROUNDED)
     table.add_column("Name", style="cyan")
     table.add_column("Type", style="dim")
     table.add_column("URL/Domain")
-    
+
     for dnsbl, name in DNSBLS:
         table.add_row(name, "DNSBL", dnsbl)
-    
+
     for feed in THREAT_FEEDS:
         table.add_row(feed["name"], "HTTP Feed", feed["url"][:50] + "...")
-    
+
     console.print(table)
 
 
