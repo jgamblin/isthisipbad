@@ -43,7 +43,7 @@ jobs:
       # Run Linter against code base #
       ################################
       - name: Lint Code Base
-        uses: super-linter/super-linter/slim@v8.5.0
+        uses: super-linter/super-linter/slim@v8
         env:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: master
