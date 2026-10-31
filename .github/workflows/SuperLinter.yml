@@ -20,6 +20,14 @@ on:
 ###############
 # Set the Job #
 ###############
+###############
+# Permissions #
+###############
+permissions:
+  contents: read
+  packages: read
+  statuses: write
+
 jobs:
   build:
     # Name the Job
