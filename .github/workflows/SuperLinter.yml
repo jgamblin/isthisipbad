@@ -54,7 +54,7 @@ jobs:
         uses: super-linter/super-linter/slim@v8
         env:
           VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: master
+          DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Only validate Python with ruff
           VALIDATE_PYTHON_RUFF: true
