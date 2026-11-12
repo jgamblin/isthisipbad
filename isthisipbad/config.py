@@ -45,6 +45,11 @@ THREAT_FEEDS = [
         "description": "Brute force attackers",
     },
     {
+        "name": "NetAPI",
+        "url": "https://netapi.com/zf-api/f/compromised/ip/live/",
+        "description": "Honeypot attackers, last 48 hours",
+    },
+    {
         "name": "Feodo Tracker",
         "url": "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
         "description": "Banking trojans (Abuse.ch)",
