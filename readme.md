@@ -126,6 +126,7 @@ python3 isthisipbad.py -i 8.8.8.8 --success
 ### HTTP Threat Feeds
 - Emerging Threats (Proofpoint)
 - Blocklist.de
+- NetAPI (honeypot attackers)
 - Abuse.ch (Feodo Tracker, SSL Blacklist)
 - CI Army
 - IPsum
