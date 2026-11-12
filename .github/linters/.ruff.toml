@@ -1,0 +1,4 @@
+# super-linter reads its ruff settings from this file, not from pyproject.toml.
+# Without it, ruff runs with its built-in default rule set, which changes
+# between ruff releases. Point it at the project's own configuration.
+extend = "../../pyproject.toml"
